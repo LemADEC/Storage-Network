@@ -8,6 +8,7 @@ public class StackWrapper {
 
   private ItemStack stack;
   private int size;
+  private boolean showNumber = true;
 
   public StackWrapper(@Nonnull ItemStack stack, int size) {
     super();
@@ -75,5 +76,13 @@ public class StackWrapper {
       return null;
     }
     return wrap;
+  }
+
+  public boolean isShowNumber() {
+    return showNumber;
+  }
+
+  public void setShowNumber(boolean showNumber) {
+    this.showNumber = showNumber;
   }
 }

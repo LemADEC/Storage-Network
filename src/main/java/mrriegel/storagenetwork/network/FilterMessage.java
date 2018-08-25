@@ -1,6 +1,7 @@
 package mrriegel.storagenetwork.network;
 
 import io.netty.buffer.ByteBuf;
+import mrriegel.storagenetwork.StorageNetwork;
 import mrriegel.storagenetwork.block.cable.ContainerCable;
 import mrriegel.storagenetwork.util.data.StackWrapper;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -31,6 +32,7 @@ public class FilterMessage implements IMessage, IMessageHandler<FilterMessage, I
   public IMessage onMessage(final FilterMessage message, final MessageContext ctx) {
     EntityPlayerMP player = ctx.getServerHandler().player;
     IThreadListener mainThread = (WorldServer) player.world;
+    //    TileEntity tileHere = player.world.getTileEntity(new BlockPos())
     mainThread.addScheduledTask(new Runnable() {
 
       @Override
@@ -38,12 +40,13 @@ public class FilterMessage implements IMessage, IMessageHandler<FilterMessage, I
         if (player.openContainer instanceof ContainerCable) {
           ContainerCable con = (ContainerCable) player.openContainer;
           if (message.wrap != null && message.index >= 0) {
+            StorageNetwork.log("SAVE tile item stacks " + message.wrap.getStack());
             con.getTile().getFilter().put(message.index, message.wrap);
           }
           con.getTile().setOres(message.ore);
           con.getTile().setMeta(message.meta);
-          con.getTile().markDirty();
-          con.slotChanged();
+          //          con.getTile().markDirty();
+          //          con.slotChanged();
         }
       }
     });

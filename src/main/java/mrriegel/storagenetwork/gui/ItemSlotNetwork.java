@@ -2,8 +2,8 @@ package mrriegel.storagenetwork.gui;
 
 import javax.annotation.Nonnull;
 import org.lwjgl.input.Keyboard;
-import mrriegel.storagenetwork.StorageNetwork;
 import mrriegel.storagenetwork.util.UtilInventory;
+import mrriegel.storagenetwork.util.data.StackWrapper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
@@ -44,9 +44,9 @@ public class ItemSlotNetwork {
 
   public void drawSlot(int mx, int my) {
     GlStateManager.pushMatrix();
-    if (this.slotIndex == 0) {
-      StorageNetwork.log("draw slot zero " + getStack().getUnlocalizedName());
-    }
+    //    if (this.slotIndex == 0) {
+    //      StorageNetwork.log("draw slot zero " + getStack().getUnlocalizedName());
+    //    } 
     if (!getStack().isEmpty()) {
 
       RenderHelper.enableGUIStandardItemLighting();
@@ -79,6 +79,11 @@ public class ItemSlotNetwork {
     GlStateManager.popMatrix();
   }
 
+  public StackWrapper getAsStackWrapper() {
+    StackWrapper wrap = new StackWrapper(stack, size);
+    wrap.setShowNumber(isShowNumber());
+    return wrap;
+  }
   public void drawTooltip(int mx, int my) {
     if (this.isMouseOverSlot(mx, my) && !getStack().isEmpty()) {
       parent.renderToolTip(getStack(), mx, my);

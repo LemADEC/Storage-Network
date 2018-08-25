@@ -100,14 +100,14 @@ public class GuiCable extends GuiContainerBase {
     //      }
     //    }
     for (ItemSlotNetwork filterSlot : itemSlots) {
-      int index = filterSlot.getSlotIndex();
-      StackWrapper wrap = tile.getFilter().get(index);
-      ItemStack s = wrap == null ? ItemStack.EMPTY : wrap.getStack();
-      int num = wrap == null ? 0 : wrap.getSize();
-      boolean numShow = tile instanceof TileCable ? tile.getUpgradesOfType(ItemUpgrade.STOCK) > 0 : false;
-      filterSlot.setStack(s);
-      filterSlot.setSize(num);
-      filterSlot.setShowNumber(numShow);
+      //      int index = filterSlot.getSlotIndex();
+      //      StackWrapper wrap = tile.getFilter().get(index);
+      //      ItemStack s = wrap == null ? ItemStack.EMPTY : wrap.getStack();
+      //      int num = wrap == null ? 0 : wrap.getSize();
+      //      boolean numShow = tile instanceof TileCable ? tile.getUpgradesOfType(ItemUpgrade.STOCK) > 0 : false;
+      //      filterSlot.setStack(s);
+      //      filterSlot.setSize(num);
+      //      filterSlot.setShowNumber(numShow);
       filterSlot.drawSlot(mouseX, mouseY);
     }
     if (tile.getUpgradesOfType(ItemUpgrade.OPERATION) >= 1) {
@@ -198,7 +198,9 @@ public class GuiCable extends GuiContainerBase {
       checkMetaBtn.setIsChecked(tile.getMeta());
       this.addButton(checkMetaBtn);
     }
+    //on initial starutp ,yeah we pull from tile to fill the slots, on open
     itemSlots = Lists.newArrayList();
+
     for (int row = 0; row < 2; row++) {
       for (int col = 0; col < 9; col++) {
         int index = col + (9 * row);
@@ -213,27 +215,35 @@ public class GuiCable extends GuiContainerBase {
     }
   }
 
+  private boolean isStackAlreadyInFilterSlots(ItemStack toTest) {
+    //todo loop on itemSlots see if exists
+    return false;
+  }
   @Override
   protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
     super.mouseClicked(mouseX, mouseY, mouseButton);
+    ItemStack stackHeldByPlayer = mc.player.inventory.getItemStack().copy();
     if (operationItemSlot != null && operationItemSlot.isMouseOverSlot(mouseX, mouseY) && tile.getUpgradesOfType(ItemUpgrade.OPERATION) >= 1) {
-      tile.setOperationStack(mc.player.inventory.getItemStack());
-      operationItemSlot.setStack(mc.player.inventory.getItemStack());
+      tile.setOperationStack(stackHeldByPlayer);
+      operationItemSlot.setStack(stackHeldByPlayer);
       int num = searchBar.getText().isEmpty() ? 0 : Integer.valueOf(searchBar.getText());
-      PacketRegistry.INSTANCE.sendToServer(new LimitMessage(num, tile.getPos(), mc.player.inventory.getItemStack()));
+      PacketRegistry.INSTANCE.sendToServer(new LimitMessage(num, tile.getPos(), stackHeldByPlayer));
       //the secret filter slot thats sometimes hidden based on upgrade
       return;
     }
     for (int i = 0; i < itemSlots.size(); i++) {
       ItemSlotNetwork itemSlot = itemSlots.get(i);
       if (itemSlot.isMouseOverSlot(mouseX, mouseY)) {
-        StorageNetwork.log("cable isOver " + i);
-        ContainerCable con = (ContainerCable) inventorySlots;
-        StackWrapper stackWrapper = con.getTile().getFilter().get(i);
-        if (mc.player.inventory.getItemStack() != null) {
-          if (!con.isInFilter(new StackWrapper(mc.player.inventory.getItemStack(), 1))) {
-            con.getTile().getFilter().put(i, new StackWrapper(mc.player.inventory.getItemStack(), mc.player.inventory.getItemStack().getCount()));
-          }
+
+        //        ContainerCable con = (ContainerCable) inventorySlots;
+        StackWrapper stackWrapper = itemSlot.getAsStackWrapper();
+        if (!stackHeldByPlayer.isEmpty()
+            && !isStackAlreadyInFilterSlots(stackHeldByPlayer)) {
+          //          if (!con.isInFilter(new StackWrapper(mc.player.inventory.getItemStack(), 1))) {
+          stackWrapper = new StackWrapper(stackHeldByPlayer, stackHeldByPlayer.getCount());
+          StorageNetwork.log("take stack from mouse  " + stackWrapper.getStack());
+
+          //          }
         }
         else if (stackWrapper != null) {
           if (mouseButton == UtilTileEntity.MOUSE_BTN_LEFT)
@@ -241,19 +251,21 @@ public class GuiCable extends GuiContainerBase {
           else if (mouseButton == UtilTileEntity.MOUSE_BTN_RIGHT)
             stackWrapper.setSize(stackWrapper.getSize() - (isShiftKeyDown() ? 10 : 1));
           else if (mouseButton == UtilTileEntity.MOUSE_BTN_SCROLL) {
-            con.getTile().getFilter().put(i, null);
+            //            con.getTile().getFilter().put(i, null);
+            stackWrapper.setStack(ItemStack.EMPTY);
           }
           if (stackWrapper != null && stackWrapper.getSize() <= 0) {
-            con.getTile().getFilter().put(i, null);
+            stackWrapper.setStack(ItemStack.EMPTY);
           }
         }
-        con.slotChanged();
-        StorageNetwork.log("cable send filter message from ghst slts ");
-        PacketRegistry.INSTANCE.sendToServer(new FilterMessage(i, tile.getFilter().get(i), tile.getOre(), tile.getMeta()));
+        //        con.slotChanged();
+        itemSlot.setStack(stackWrapper.getStack());
+        //TODO: MAYBE A fromWrapper
+        StorageNetwork.log("T!!ODO: MAYBE A fromWrapper s " + stackWrapper.getStack());
+        PacketRegistry.INSTANCE.sendToServer(new FilterMessage(i, stackWrapper, tile.getOre(), tile.getMeta()));
         break;
       }
     }
-    StorageNetwork.log("end mouse click guicable ");
   }
 
   @Override
@@ -309,6 +321,9 @@ public class GuiCable extends GuiContainerBase {
   @Override
   public void onGuiClosed() {
     super.onGuiClosed();
+    //    StorageNetwork.log("ON CLOSEPROIU s ");
     Keyboard.enableRepeatEvents(false);
+    for (ItemSlotNetwork filterSlot : this.itemSlots) {
+    }
   }
 }
