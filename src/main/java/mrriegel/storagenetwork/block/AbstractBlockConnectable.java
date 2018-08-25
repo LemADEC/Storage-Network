@@ -50,7 +50,7 @@ public abstract class AbstractBlockConnectable extends BlockContainer {
     }
   }
 
-  public void setConnections(World worldIn, BlockPos pos, IBlockState state, boolean refresh) {
+  protected void setConnections(World worldIn, BlockPos pos, IBlockState state, boolean refresh) throws Exception {
     TileEntity myselfTile = worldIn.getTileEntity(pos);
     if (myselfTile == null || myselfTile instanceof IConnectable == false) {
       return;
@@ -68,22 +68,7 @@ public abstract class AbstractBlockConnectable extends BlockContainer {
       TileEntity tileMaster = worldIn.getTileEntity(myselfConnect.getMaster());
       myselfConnect.setMaster(null);
       worldIn.markChunkDirty(myselfTile.getPos(), myselfTile);
-      try {
-        setAllMastersNull(worldIn, pos, myselfConnect);
-      }
-      catch (Error e) {
-        e.printStackTrace();
-        if (tileMaster instanceof TileMaster) {
-          ///seems like i can delete this superhack but im not sure, it never executes
-          for (BlockPos p : ((TileMaster) tileMaster).getConnectables()) {
-            TileEntity tileCurrent = worldIn.getTileEntity(p);
-            if (worldIn.getChunkFromBlockCoords(p).isLoaded() && tileCurrent instanceof IConnectable) {
-              ((IConnectable) tileCurrent).setMaster(null);
-              worldIn.markChunkDirty(p, tileCurrent);
-            }
-          }
-        }
-      }
+      setAllMastersNull(worldIn, pos, myselfConnect);
       if (refresh && tileMaster instanceof TileMaster) {
         ((TileMaster) tileMaster).refreshNetwork();
       }

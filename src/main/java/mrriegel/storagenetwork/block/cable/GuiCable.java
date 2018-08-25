@@ -14,6 +14,7 @@ import mrriegel.storagenetwork.network.FilterMessage;
 import mrriegel.storagenetwork.network.LimitMessage;
 import mrriegel.storagenetwork.registry.ModBlocks;
 import mrriegel.storagenetwork.registry.PacketRegistry;
+import mrriegel.storagenetwork.util.UtilTileEntity;
 import mrriegel.storagenetwork.util.data.StackWrapper;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiTextField;
@@ -30,17 +31,19 @@ public class GuiCable extends GuiContainerBase {
   private GuiCableButton btnPlus, btnMinus, btnWhite, btnOperationToggle, btnImport, btnInputOutputStorage;
   private TileCable tile;
   private GuiTextField searchBar;
-  private List<ItemSlotNetwork> list;
+  private List<ItemSlotNetwork> itemSlots;
   private ItemSlotNetwork operationItemSlot;
   private GuiCheckBox checkOreBtn;
   private GuiCheckBox checkMetaBtn;
+  private int xCenter;
+  private int yCenter;
 
   public GuiCable(ContainerCable inventorySlotsIn) {
     super(inventorySlotsIn);
     this.xSize = 176;
     this.ySize = 171;
     this.tile = inventorySlotsIn.getTile();
-    list = Lists.newArrayList();
+    itemSlots = Lists.newArrayList();
   }
 
   @Override
@@ -57,56 +60,60 @@ public class GuiCable extends GuiContainerBase {
 
   @Override
   protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
+
     this.drawDefaultBackground();//dim the background as normal
     GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
     this.mc.getTextureManager().bindTexture(texture);
-    int i = (this.width - this.xSize) / 2;
-    int j = (this.height - this.ySize) / 2;
-    this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
-    //    if (tile.getBlockType() != ModBlocks.storageKabel) {
-    for (int ii = 0; ii < 9; ii++) {
-      for (int jj = 0; jj < 2; jj++) {
-        this.drawTexturedModalRect(i + 7 + ii * 18, j + 25 + 18 * jj, 176, 34, 18, 18);
+    xCenter = (this.width - this.xSize) / 2;
+    yCenter = (this.height - this.ySize) / 2;
+    this.drawTexturedModalRect(xCenter, yCenter, 0, 0, this.xSize, this.ySize);
+
+    for (int col = 0; col < 9; col++) {
+      for (int row = 0; row < 2; row++) {
+        this.drawTexturedModalRect(xCenter + 7 + col * 18, yCenter + 25 + 18 * row, 176, 34, 18, 18);
       }
     }
-    //    }
+
     if (tile.isUpgradeable()) {
       for (int ii = 0; ii < ItemUpgrade.NUM; ii++) {
-        this.drawTexturedModalRect(i + 97 + ii * 18, j + 5, 176, 34, 18, 18);
+        this.drawTexturedModalRect(xCenter + 97 + ii * 18, yCenter + 5, 176, 34, 18, 18);
       }
     }
     if (tile.getUpgradesOfType(ItemUpgrade.OPERATION) >= 1 && btnOperationToggle != null) {
       btnOperationToggle.enabled = true;
       btnOperationToggle.visible = true;
       this.mc.getTextureManager().bindTexture(texture);
-      this.drawTexturedModalRect(i + 7, j + 65, 176, 34, 18, 18);//the extra slot
+      this.drawTexturedModalRect(xCenter + 7, yCenter + 65, 176, 34, 18, 18);//the extra slot
       //also draw textbox
-      this.drawTexturedModalRect(i + 50, j + 67, 0, 171, TEXTBOX_WIDTH, 12);
+      this.drawTexturedModalRect(xCenter + 50, yCenter + 67, 0, 171, TEXTBOX_WIDTH, 12);
       searchBar.drawTextBox();
     }
     else if (btnOperationToggle != null) {
       btnOperationToggle.enabled = false;
       btnOperationToggle.visible = false;
     }
-    //    if (tile.getBlockType() != ModBlocks.storageKabel) {
-    list = Lists.newArrayList();
-    for (int jj = 0; jj < 2; jj++) {
-      for (int ii = 0; ii < 9; ii++) {
-        int index = ii + (9 * jj);
-        StackWrapper wrap = tile.getFilter().get(index);
-        ItemStack s = wrap == null ? ItemStack.EMPTY : wrap.getStack();
-        int num = wrap == null ? 0 : wrap.getSize();
-        boolean numShow = tile instanceof TileCable ? tile.getUpgradesOfType(ItemUpgrade.STOCK) > 0 : false;
-        list.add(new ItemSlotNetwork(this, s, guiLeft + 8 + ii * 18, guiTop + 26 + jj * 18, num, guiLeft, guiTop, numShow));
-      }
-    }
-    for (ItemSlotNetwork s : list) {
-      s.drawSlot(mouseX, mouseY);
+    //    for (int row = 0; row < 2; row++) {
+    //      for (int col = 0; col < 9; col++) {
+    //
+    //        //        itemSlots.get(index)
+    //        //        itemSlots.add(new ItemSlotNetwork(this, s, guiLeft + 8 + col * 18, guiTop + 26 + row * 18, num, guiLeft, guiTop, numShow));
+    //      }
+    //    }
+    for (ItemSlotNetwork filterSlot : itemSlots) {
+      int index = filterSlot.getSlotIndex();
+      StackWrapper wrap = tile.getFilter().get(index);
+      ItemStack s = wrap == null ? ItemStack.EMPTY : wrap.getStack();
+      int num = wrap == null ? 0 : wrap.getSize();
+      boolean numShow = tile instanceof TileCable ? tile.getUpgradesOfType(ItemUpgrade.STOCK) > 0 : false;
+      filterSlot.setStack(s);
+      filterSlot.setSize(num);
+      filterSlot.setShowNumber(numShow);
+      filterSlot.drawSlot(mouseX, mouseY);
     }
     if (tile.getUpgradesOfType(ItemUpgrade.OPERATION) >= 1) {
       operationItemSlot.drawSlot(mouseX, mouseY);
     }
-    //    }
+
     fontRenderer.drawString(String.valueOf(tile.getPriority()), guiLeft + 30 - fontRenderer.getStringWidth(String.valueOf(tile.getPriority())) / 2, guiTop + 10, 4210752);
   }
 
@@ -116,7 +123,7 @@ public class GuiCable extends GuiContainerBase {
   }
 
   private void drawTooltips(int mouseX, int mouseY) {
-    for (ItemSlotNetwork s : list) {
+    for (ItemSlotNetwork s : itemSlots) {
       if (s != null && s.getStack() != null && !s.getStack().isEmpty() && s.isMouseOverSlot(mouseX, mouseY))
         this.renderToolTip(s.getStack(), mouseX, mouseY);
     }
@@ -191,6 +198,19 @@ public class GuiCable extends GuiContainerBase {
       checkMetaBtn.setIsChecked(tile.getMeta());
       this.addButton(checkMetaBtn);
     }
+    itemSlots = Lists.newArrayList();
+    for (int row = 0; row < 2; row++) {
+      for (int col = 0; col < 9; col++) {
+        int index = col + (9 * row);
+        StackWrapper wrap = tile.getFilter().get(index);
+        ItemStack s = wrap == null ? ItemStack.EMPTY : wrap.getStack();
+        int num = wrap == null ? 0 : wrap.getSize();
+        boolean numShow = tile instanceof TileCable ? tile.getUpgradesOfType(ItemUpgrade.STOCK) > 0 : false;
+        ItemSlotNetwork newSlot = new ItemSlotNetwork(this, s, guiLeft + 8 + col * 18, guiTop + 26 + row * 18, num, guiLeft, guiTop, numShow);
+        newSlot.setSlotIndex(index);
+        itemSlots.add(newSlot);
+      }
+    }
   }
 
   @Override
@@ -201,37 +221,39 @@ public class GuiCable extends GuiContainerBase {
       operationItemSlot.setStack(mc.player.inventory.getItemStack());
       int num = searchBar.getText().isEmpty() ? 0 : Integer.valueOf(searchBar.getText());
       PacketRegistry.INSTANCE.sendToServer(new LimitMessage(num, tile.getPos(), mc.player.inventory.getItemStack()));
+      //the secret filter slot thats sometimes hidden based on upgrade
       return;
     }
-    for (int i = 0; i < list.size(); i++) {
-      ItemSlotNetwork e = list.get(i);
-      if (e.isMouseOverSlot(mouseX, mouseY)) {
+    for (int i = 0; i < itemSlots.size(); i++) {
+      ItemSlotNetwork itemSlot = itemSlots.get(i);
+      if (itemSlot.isMouseOverSlot(mouseX, mouseY)) {
+        StorageNetwork.log("cable isOver " + i);
         ContainerCable con = (ContainerCable) inventorySlots;
-        StackWrapper x = con.getTile().getFilter().get(i);
+        StackWrapper stackWrapper = con.getTile().getFilter().get(i);
         if (mc.player.inventory.getItemStack() != null) {
           if (!con.isInFilter(new StackWrapper(mc.player.inventory.getItemStack(), 1))) {
             con.getTile().getFilter().put(i, new StackWrapper(mc.player.inventory.getItemStack(), mc.player.inventory.getItemStack().getCount()));
           }
         }
-        else {
-          if (x != null) {
-            if (mouseButton == 0)
-              x.setSize(x.getSize() + (isShiftKeyDown() ? 10 : 1));
-            else if (mouseButton == 1)
-              x.setSize(x.getSize() - (isShiftKeyDown() ? 10 : 1));
-            else if (mouseButton == 2) {
-              con.getTile().getFilter().put(i, null);
-            }
-            if (x != null && x.getSize() <= 0) {
-              con.getTile().getFilter().put(i, null);
-            }
+        else if (stackWrapper != null) {
+          if (mouseButton == UtilTileEntity.MOUSE_BTN_LEFT)
+            stackWrapper.setSize(stackWrapper.getSize() + (isShiftKeyDown() ? 10 : 1));
+          else if (mouseButton == UtilTileEntity.MOUSE_BTN_RIGHT)
+            stackWrapper.setSize(stackWrapper.getSize() - (isShiftKeyDown() ? 10 : 1));
+          else if (mouseButton == UtilTileEntity.MOUSE_BTN_SCROLL) {
+            con.getTile().getFilter().put(i, null);
+          }
+          if (stackWrapper != null && stackWrapper.getSize() <= 0) {
+            con.getTile().getFilter().put(i, null);
           }
         }
         con.slotChanged();
+        StorageNetwork.log("cable send filter message from ghst slts ");
         PacketRegistry.INSTANCE.sendToServer(new FilterMessage(i, tile.getFilter().get(i), tile.getOre(), tile.getMeta()));
         break;
       }
     }
+    StorageNetwork.log("end mouse click guicable ");
   }
 
   @Override

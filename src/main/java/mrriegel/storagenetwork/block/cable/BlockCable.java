@@ -208,7 +208,12 @@ public class BlockCable extends AbstractBlockConnectable {
   @Override
   public void setConnections(World worldIn, BlockPos pos, IBlockState state, boolean refresh) {
     state = getNewState(worldIn, pos);
-    super.setConnections(worldIn, pos, state, refresh);
+    try {
+      super.setConnections(worldIn, pos, state, refresh);
+    }
+    catch (Exception e) {
+      StorageNetwork.instance.logger.error("StorageNetwork: exception thrown while updating neighbours:", e);
+    }
     if (refresh) {
       UtilTileEntity.updateTile(worldIn, pos);
     }
